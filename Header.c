@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include <string.h>
+
 #include "Header.h"
 
 void ping() {
@@ -45,22 +46,22 @@ bool FileToTableaux(char * file_dir, Tableaux tableaux) {
         return false;
     }
 
-    char cfchar,        // Actual char 
-         bfchar;        // Before char
-        //  method;        // Maximize (a) ou Minimize (i)
+    char cfchar,                // Actual char 
+         bfchar;                // Before char
     
-    int index,          // Auxiliar, store index of variable in array
-        buffer_pt = 0,  // Buffer position of letter string
-        scounter = 0,   // s1, s2, s3, ..., si
-        acounter = 0,   // a1, a2, a3, ..., ai
-        vnumber = 0,    // Store de var value
-        bindex = 0;     // Base var index
+    int index,                  // Auxiliar, store index of variable in array
+        buffer_pt = 0,          // Buffer position of char in string
+        scounter = 0,           // s1, s2, s3, ..., si
+        acounter = 0,           // a1, a2, a3, ..., ai
+        vnumber = 0,            // Store de var value
+        bindex = 0,             // Base var index
+        digitc = 0;             // Number digit counter
 
-    short negative_factor = 1; // 1 to positive -1 to negative, for each number
+    short negative_factor = 1;  // 1 to positive -1 to negative, for each number
     
-    bool an_varpart = false, // If an variable name is in analisys 
-         zline = true,       // Verify if is mounting a zline
-         is_solution = false; // Verify if is analising a solution
+    bool an_varpart = false,    // If an variable name is in analisys 
+         is_solution = false,   // Verify if is analising a solution
+         zline = true;          // Verify if is mounting a zline
 
     // Get maximize or minimize (a || i)
     fseek(problem_set, 1, SEEK_CUR);
@@ -76,6 +77,9 @@ bool FileToTableaux(char * file_dir, Tableaux tableaux) {
             negative_factor = -1;
         } else if (isdigit(cfchar) && !an_varpart) {
             vnumber = (vnumber * 10) + (cfchar - '0');
+            digitc++;
+
+            if (digitc > tableaux->vstrl) tableaux->vstrl = digitc;
         }
         else if (cfchar == '<' || cfchar == '>' || cfchar == '=' || cfchar == '\n' || cfchar == '+' || cfchar == EOF) {
             index = FindIndex(tableaux->variables, tableaux->variables[tableaux->nvars], tableaux->nvars);
@@ -123,7 +127,7 @@ bool FileToTableaux(char * file_dir, Tableaux tableaux) {
                 }
             }
 
-            buffer_pt = vnumber = 0;
+            buffer_pt = vnumber = digitc = 0;
             negative_factor = 1;
             an_varpart = false;
         }
@@ -133,6 +137,8 @@ bool FileToTableaux(char * file_dir, Tableaux tableaux) {
             an_varpart = true;
             tableaux->variables[tableaux->nvars][buffer_pt++] = cfchar;
             tableaux->variables[tableaux->nvars][buffer_pt] = '\0';
+
+            if(buffer_pt > tableaux->vstrl) tableaux->vstrl = buffer_pt;
         }
 
         bfchar = cfchar;
@@ -149,6 +155,21 @@ void printCL(int qtd) {
     printf("+\n");
 }
 
+void ShowTableauxInfo(Tableaux tableaux) {
+    printf("\n");
+    printf("Method: %s\n", tableaux->mode == MAXIMIZE ? "Maximize" : "Miniminize");
+    printf("Variables Amount: %d\n", tableaux->nvars);
+    printf("Expressions Amount: %d\n", tableaux->nexps);
+    printf("\nVariables: ");
+    for (size_t i = 0; i < tableaux->nvars; i++)
+        printf("%s%s", tableaux->variables[i], i != tableaux->nvars - 1 ? ", " : "\n");
+
+    printf("Base: ");
+    for (size_t i = 0; i < tableaux->nexps; i++)
+        printf("%s%s", tableaux->bases[i], i != tableaux->nexps - 1 ? ", " : "\n");
+    
+}
+
 void ShowTableaux(Tableaux tableaux) {
     int collumns = tableaux->nvars + 2;
 
@@ -156,12 +177,12 @@ void ShowTableaux(Tableaux tableaux) {
 
     printCL(collumns);
     
-    printf("|     Bases     ");
+    printf("|       Bs      ");
 
     // Variables
     for (size_t i = 0; i < tableaux->nvars; i++) 
         printf("|\t%s\t", tableaux->variables[i]);
-    printf("|    Solution   ");
+    printf("|\tSl\t");
     printf("|\n");
     
     printCL(collumns);

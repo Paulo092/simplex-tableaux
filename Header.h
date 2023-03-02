@@ -21,7 +21,7 @@ typedef struct Tableaux{
     
     int values[LNS][CLS];
     int solutions[CLS];
-    int nvars, nexps;
+    int nvars, nexps, vstrl;
 } * Tableaux;
 
 
@@ -37,3 +37,4 @@ void Alert(const int type, char *message);
 int FindIndex(char string_array[][BFF], char *value, int size);
 void printCL(int qtd);
 void ping();
+void ShowTableauxInfo(Tableaux tableaux);

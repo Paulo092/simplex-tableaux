@@ -13,11 +13,9 @@ int main(int argc, char const *argv[]) {
 
     ShowTableaux(tbl);
 
-    for (size_t i = 0; i <= tbl->nexps; i++) {
-        printf(" %d ->", tbl->solutions[i]);
-    }
-        printf("\n>>> %d", tbl->nexps);
-    
+    ShowTableauxInfo(tbl);
+    printf("\nBigger String: %d\n\n", tbl->vstrl);
+    // printf("\nBigger String: %d\n\n", getBiggerString(tbl));
 
     return 0;
 }
