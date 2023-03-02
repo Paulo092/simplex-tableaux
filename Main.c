@@ -13,5 +13,11 @@ int main(int argc, char const *argv[]) {
 
     ShowTableaux(tbl);
 
+    for (size_t i = 0; i <= tbl->nexps; i++) {
+        printf(" %d ->", tbl->solutions[i]);
+    }
+        printf("\n>>> %d", tbl->nexps);
+    
+
     return 0;
 }
