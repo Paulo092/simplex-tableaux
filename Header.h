@@ -12,9 +12,10 @@
 
 typedef struct Tableaux{
     char variables[CLS][BFF];
+    char bases[LNS][BFF];
+    
     int values[LNS][CLS];
     int solutions[LNS][CLS];
-    int bases[LNS][CLS];
     int nvars, nexps;
 } * Tableaux;
 

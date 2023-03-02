@@ -45,10 +45,20 @@ bool FileToTableaux(char * file_dir, Tableaux tableaux) {
         return false;
     }
 
-    char cfchar, bfchar, method;
-    int vnumber = 0, buffer_pt = 0, index, scounter = 0, acounter = 0;
-    short negative_factor = -1;
-    bool an_varpart = false;
+    char cfchar,        // Actual char 
+         bfchar,        // Before char
+         method;        // Maximize (a) ou Minimize (i)
+    
+    int index,          // Auxiliar, store index of variable in array
+        buffer_pt = 0,  // Buffer position of letter string
+        scounter = 0,   // s1, s2, s3, ..., si
+        acounter = 0,   // a1, a2, a3, ..., ai
+        vnumber = 0,    // Store de var value
+        bindex = 0;     // Base var index
+
+    short negative_factor = 1; // 1 to positive -1 to negative, for each number
+    
+    bool an_varpart = false; // If an variable name is in analisys 
 
     // Get maximize or minimize (a || i)
     fseek(problem_set, 1, SEEK_CUR);
@@ -65,18 +75,24 @@ bool FileToTableaux(char * file_dir, Tableaux tableaux) {
         } else if (cfchar == '<' || cfchar == '>' || cfchar == '=' || cfchar == '\n' || cfchar == '+') {
             index = FindIndex(tableaux->variables, tableaux->variables[tableaux->nvars], tableaux->nvars);
 
-            if (buffer_pt != 0 && index == -1) index = tableaux->nvars++;
+            if (an_varpart && index == -1) index = tableaux->nvars++;
             if (an_varpart && tableaux->nexps != 0) tableaux->values[tableaux->nexps-1][index] = vnumber * negative_factor;
             if (cfchar == '\n' && bfchar != '\n') tableaux->nexps++;
+
 
             if(cfchar == '=') {
                 switch (bfchar) {
                     case '<':
+                        printf(">>%d\n", tableaux->nexps - 1);
+                        sprintf(tableaux->bases[tableaux->nexps - 1], "s%d", 1 + scounter);
+
                         sprintf(tableaux->variables[tableaux->nvars++], "s%d", 1 + scounter++);
                         tableaux->values[tableaux->nexps - 1][tableaux->nvars - 1] = 1;
                         break;
 
                     case '>':
+                        sprintf(tableaux->bases[tableaux->nexps - 1], "a%d", 1 + acounter);
+
                         sprintf(tableaux->variables[tableaux->nvars++], "s%d", 1 + scounter++);
                         tableaux->values[tableaux->nexps - 1][tableaux->nvars - 1] = -1;
                         sprintf(tableaux->variables[tableaux->nvars++], "a%d", 1 + acounter++);
@@ -84,6 +100,8 @@ bool FileToTableaux(char * file_dir, Tableaux tableaux) {
                         break;
                     
                     default:
+                        sprintf(tableaux->bases[tableaux->nexps - 1], "a%d", 1 + acounter);
+
                         sprintf(tableaux->variables[tableaux->nvars++], "a%d", 1 + acounter++);
                         tableaux->values[tableaux->nexps - 1][tableaux->nvars - 1] = 1;
                         break;
@@ -111,21 +129,26 @@ bool FileToTableaux(char * file_dir, Tableaux tableaux) {
 }
 
 void ShowTableaux(Tableaux tableaux) {
-    for (size_t i = 0; i < tableaux->nvars; i++) printf("+---------------");
+    int collumns = tableaux->nvars+1;
+
+    for (size_t i = 0; i < collumns; i++) printf("+---------------");
     printf("+\n");
+    printf("|\tBases\t");
     for (size_t i = 0; i < tableaux->nvars; i++) printf("|\t%s\t", tableaux->variables[i]);
     printf("|\n");
-    for (size_t i = 0; i < tableaux->nvars; i++) printf("+---------------");
+    for (size_t i = 0; i < collumns; i++) printf("+---------------");
     printf("+\n");
 
     for (size_t i = 0; i < tableaux->nexps; i++) {
         for (size_t j = 0; j < tableaux->nvars; j++) {
-            printf("|\t%d\t", tableaux->values[i][j]);
+            if(j == 0) 
+                printf("|\t%s\t", tableaux->bases[i]);
+                printf("|\t%d\t", tableaux->values[i][j]);
         }
         printf("|\n");
     } 
 
-    for (size_t i = 0; i < tableaux->nvars; i++) printf("+---------------");
+    for (size_t i = 0; i < collumns; i++) printf("+---------------");
     printf("+\n");
         
 }
