@@ -97,7 +97,7 @@ bool FileToTableaux(char * file_dir, Tableaux tableaux) {
             index = FindIndex(tableaux->variables, tableaux->variables[tableaux->nvars], tableaux->nvars);
 
             if((cfchar == '\n' || cfchar == EOF) && is_solution) {
-                tableaux->solutions[tableaux->nexps] = vnumber * negative_factor;
+                tableaux->solutions[tableaux->nexps] = (vnumber + (dnumber / dfactor * 1.0)) * negative_factor;
 
                 if(cfchar == EOF) break;
             }

@@ -20,7 +20,7 @@ typedef struct Tableaux{
     char bases[LNS][BFF];
     
     float values[LNS][CLS];
-    int solutions[CLS];
+    float solutions[CLS];
     int nvars, nexps, vstrl;
 } * Tableaux;
 
