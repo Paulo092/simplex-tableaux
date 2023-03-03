@@ -19,7 +19,7 @@ typedef struct Tableaux{
     char variables[CLS][BFF];
     char bases[LNS][BFF];
     
-    int values[LNS][CLS];
+    float values[LNS][CLS];
     int solutions[CLS];
     int nvars, nexps, vstrl;
 } * Tableaux;
@@ -30,11 +30,12 @@ bool FileToTableaux(char * file_dir, Tableaux tableaux);
 
 // Tableaux Operations
 Tableaux NewTableaux();
+void SolveTableaux(Tableaux tableaux);
 
 // Utils
 void ShowTableaux(Tableaux tableaux);
 void Alert(const int type, char *message);
 int FindIndex(char string_array[][BFF], char *value, int size);
-void printCL(int qtd);
+void PrintCollumnsSep(int qtd, char type[]);
 void ping();
 void ShowTableauxInfo(Tableaux tableaux);

@@ -48,19 +48,23 @@ bool FileToTableaux(char * file_dir, Tableaux tableaux) {
 
     char cfchar,                // Actual char 
          bfchar;                // Before char
-    
-    int index,                  // Auxiliar, store index of variable in array
-        buffer_pt = 0,          // Buffer position of char in string
-        scounter = 0,           // s1, s2, s3, ..., si
-        acounter = 0,           // a1, a2, a3, ..., ai
-        vnumber = 0,            // Store de var value
-        bindex = 0,             // Base var index
-        digitc = 0;             // Number digit counter
+
+    float dfactor = 1;
+
+    int index,         // Auxiliar, store index of variable in array
+        buffer_pt = 0, // Buffer position of char in string
+        scounter = 0,  // s1, s2, s3, ..., si
+        acounter = 0,  // a1, a2, a3, ..., ai
+        vnumber = 0,   // Store de var value integer
+        dnumber = 0,   // Store de var value decimal
+        bindex = 0,    // Base var index
+        digitc = 0;    // Number digit counter
 
     short negative_factor = 1;  // 1 to positive -1 to negative, for each number
     
     bool an_varpart = false,    // If an variable name is in analisys 
          is_solution = false,   // Verify if is analising a solution
+         dec_part = false,
          zline = true;          // Verify if is mounting a zline
 
     // Get maximize or minimize (a || i)
@@ -73,15 +77,23 @@ bool FileToTableaux(char * file_dir, Tableaux tableaux) {
 
         if (cfchar == ' ' || cfchar == '\t') continue;
 
-        if (cfchar == '-') {
-            negative_factor = -1;
+        if (cfchar == '.' && !an_varpart) {
+            dec_part = true;
+            digitc++;
         } else if (isdigit(cfchar) && !an_varpart) {
-            vnumber = (vnumber * 10) + (cfchar - '0');
+            if(dec_part) {
+                dnumber = (dnumber * 10) + (cfchar - '0');
+                dfactor *= 10;
+            }
+            else 
+                vnumber = (vnumber * 10) + (cfchar - '0');
+
             digitc++;
 
             if (digitc > tableaux->vstrl) tableaux->vstrl = digitc;
         }
-        else if (cfchar == '<' || cfchar == '>' || cfchar == '=' || cfchar == '\n' || cfchar == '+' || cfchar == EOF) {
+        else if (cfchar == '<' || cfchar == '>' || cfchar == '=' || cfchar == '\n' || cfchar == '+' || cfchar == '-' || cfchar == EOF)
+        {
             index = FindIndex(tableaux->variables, tableaux->variables[tableaux->nvars], tableaux->nvars);
 
             if((cfchar == '\n' || cfchar == EOF) && is_solution) {
@@ -91,7 +103,9 @@ bool FileToTableaux(char * file_dir, Tableaux tableaux) {
             }
 
             if (an_varpart && index == -1) index = tableaux->nvars++;
-            if (an_varpart) tableaux->values[tableaux->nexps][index] = vnumber * negative_factor * (zline ? -1 : 1);
+            if (an_varpart) {
+                tableaux->values[tableaux->nexps][index] = (vnumber + (dnumber / dfactor * 1.0)) * negative_factor * (zline ? -1 : 1);
+            }
             if (cfchar == '\n' && bfchar != '\n') {
                 tableaux->nexps++;
                 zline = false;
@@ -100,38 +114,27 @@ bool FileToTableaux(char * file_dir, Tableaux tableaux) {
 
             if(cfchar == '=') {
                 is_solution = true;
-                switch (bfchar) {
-                    case '<':
-                        sprintf(tableaux->bases[tableaux->nexps - 1], "s%d", 1 + scounter);
 
-                        sprintf(tableaux->variables[tableaux->nvars++], "s%d", 1 + scounter++);
-                        tableaux->values[tableaux->nexps][tableaux->nvars - 1] = 1;
-                        break;
+                sprintf(tableaux->bases[tableaux->nexps - 1], "%c%d", bfchar == '<' ? 's' : 'a', bfchar == '=' ? 1 + acounter : 1 + scounter);
 
-                    case '>':
-                        sprintf(tableaux->bases[tableaux->nexps - 1], "a%d", 1 + acounter);
-
-                        sprintf(tableaux->variables[tableaux->nvars++], "s%d", 1 + scounter++);
-                        tableaux->values[tableaux->nexps][tableaux->nvars - 1] = -1;
-
-                        sprintf(tableaux->variables[tableaux->nvars++], "a%d", 1 + acounter++);
-                        tableaux->values[tableaux->nexps][tableaux->nvars - 1] = 1;
-                        break;
-                    
-                    default:
-                        sprintf(tableaux->bases[tableaux->nexps - 1], "a%d", 1 + acounter);
-
-                        sprintf(tableaux->variables[tableaux->nvars++], "a%d", 1 + acounter++);
-                        tableaux->values[tableaux->nexps][tableaux->nvars - 1] = 1;
-                        break;
+                if (bfchar == '<' || bfchar == '>') {
+                    sprintf(tableaux->variables[tableaux->nvars++], "s%d", 1 + scounter++);
+                    tableaux->values[tableaux->nexps][tableaux->nvars - 1] = bfchar == '<' ? 1 : -1;
+                }
+                
+                if (bfchar != '<') {
+                    sprintf(tableaux->variables[tableaux->nvars++], "a%d", 1 + acounter++);
+                    tableaux->values[tableaux->nexps][tableaux->nvars - 1] = 1;
                 }
             }
 
-            buffer_pt = vnumber = digitc = 0;
-            negative_factor = 1;
-            an_varpart = false;
+            negative_factor = cfchar == '-' ? -1 : 1;
+            buffer_pt = vnumber = digitc = dnumber = 0;
+            dec_part = an_varpart = false;
+            dfactor = 1;
         }
         else {
+            if(cfchar == '-') continue;
             if (vnumber == 0) vnumber = 1;
 
             an_varpart = true;
@@ -149,10 +152,14 @@ bool FileToTableaux(char * file_dir, Tableaux tableaux) {
     return true;
 }
 
-void printCL(int qtd) {
+void SolveTableaux(Tableaux tableaux) {
+    printf("Solve...");
+}
+
+void PrintCollumnsSep(int qtd, char type[]) {
     for (size_t i = 0; i < qtd; i++)
-        printf("+---------------");
-    printf("+\n");
+        printf("%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c%c", 206, 205, 205, 205, 205, 205, 205, 205, 205, 205, 205, 205, 205, 205, 205, 205);
+    printf("%c\n", 206);
 }
 
 void ShowTableauxInfo(Tableaux tableaux) {
@@ -175,44 +182,44 @@ void ShowTableaux(Tableaux tableaux) {
 
     printf("\n");
 
-    printCL(collumns);
-    
-    printf("|       Bs      ");
+    PrintCollumnsSep(collumns, "");
+
+    printf("%c       Bs      ", 186);
 
     // Variables
     for (size_t i = 0; i < tableaux->nvars; i++) 
-        printf("|\t%s\t", tableaux->variables[i]);
-    printf("|\tSl\t");
-    printf("|\n");
+        printf("%c\t%s\t", 186, tableaux->variables[i]);
+    printf("%c\tSl\t", 186);
+    printf("%c\n", 186);
     
-    printCL(collumns);
+    PrintCollumnsSep(collumns, "");
 
-    printf("|\tz\t");
+    printf("%c\tz\t", 186);
 
     // Z line values
     for (size_t i = 0; i < tableaux->nvars; i++) {
-        printf("|\t%d\t", tableaux->values[0][i]);
+        printf("%c\t%.2lf\t", 186, tableaux->values[0][i]);
     }
-    printf("|\t%d\t", tableaux->solutions[0]);
-    printf("|\n");
+    printf("%c\t%.2lf\t", 186, tableaux->solutions[0]);
+    printf("%c\n", 186);
 
-    printCL(collumns);
+    PrintCollumnsSep(collumns, "");
 
     // Values & base variables tag
     for (size_t i = 1; i <= tableaux->nexps; i++) {
         for (size_t j = 0; j < tableaux->nvars; j++) {
-            if(j == 0) 
-                printf("|\t%s\t", tableaux->bases[i-1]);
-                
-            printf("|\t%d\t", tableaux->values[i][j]);
+            if(j == 0)
+                printf("%c\t%s\t", 186, tableaux->bases[i - 1]);
+
+            printf("%c\t%.2lf\t", 186, tableaux->values[i][j]);
         }
 
-        printf("|\t%d\t", tableaux->solutions[i]);
+        printf("%c\t%.2lf\t", 186, tableaux->solutions[i]);
 
-        printf("|\n");
+        printf("%c\n", 186);
     } 
 
-    printCL(collumns);        
+    PrintCollumnsSep(collumns, "");        
 }
 
 int FindIndex(char string_array[][BFF], char * string, int size) {
